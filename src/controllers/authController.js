@@ -10,11 +10,14 @@ export async function signUp(req, res) {
     const validate = userSchema.validate(user);
 
     if (validate.error) {
+      console.log(validate.error);
       return res.sendStatus(422);
     }
   
     const hash = bcrypt.hashSync(user.password, 10);
-  
+    
+    delete user.confirmPassword;
+
     await db.collection('users').insertOne({ ...user, password: hash })
   
     res.sendStatus(201);
@@ -31,8 +34,12 @@ export async function signIn(req, res) {
       const token = uuid();
   
       await db.collection('sessions').insertOne({ token, userId: user._id });
-  
-      res.send(token);
+      
+      delete user._id;
+      delete user.password;
+      delete user.confirmPassword;
+
+      res.send({...user, token: token});
     } else {
       res.sendStatus(401);
     }
